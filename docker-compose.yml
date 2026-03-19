@@ -1,0 +1,14 @@
+services:
+  resendev:
+    build: .
+    ports:
+      - "3099:3099"
+    volumes:
+      - resendev_data:/app/data
+    environment:
+      - RESENDEV_PORT=3099
+      - RESENDEV_MAX_EMAILS=1000
+      - RESENDEV_RETENTION_HOURS=24
+
+volumes:
+  resendev_data:
