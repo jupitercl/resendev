@@ -36,3 +36,16 @@ export function normalizeToArray(value: string | string[] | undefined): string[]
   if (value === undefined || value === null) return null;
   return Array.isArray(value) ? value : [value];
 }
+
+export function validateAuth(request: Request): { error: Response } | null {
+  const authHeader = request.headers.get("authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return {
+      error: Response.json(
+        { statusCode: 401, message: "Missing API key", name: "missing_api_key" },
+        { status: 401 },
+      ),
+    };
+  }
+  return null;
+}
