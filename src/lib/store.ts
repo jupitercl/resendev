@@ -87,3 +87,16 @@ export function getEmailCount(): number {
   const row = db.prepare("SELECT COUNT(*) as count FROM emails").get() as { count: number };
   return row.count;
 }
+
+export function searchEmails(query: string): Email[] {
+  const db = getDb();
+  // Append * for prefix matching
+  const ftsQuery = query.split(/\s+/).map((t) => `"${t}"*`).join(" ");
+  const rows = db.prepare(`
+    SELECT emails.* FROM emails
+    JOIN emails_fts ON emails.rowid = emails_fts.rowid
+    WHERE emails_fts MATCH ?
+    ORDER BY emails.created_at DESC
+  `).all(ftsQuery) as EmailRow[];
+  return rows.map(rowToEmail);
+}

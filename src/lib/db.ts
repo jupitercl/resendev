@@ -44,5 +44,21 @@ function initialize(db: Database.Database): void {
     );
 
     CREATE INDEX IF NOT EXISTS idx_emails_created_at ON emails(created_at DESC);
+
+    CREATE VIRTUAL TABLE IF NOT EXISTS emails_fts USING fts5(
+      subject, from_address, to_addresses, html, text_content,
+      content='emails', content_rowid='rowid'
+    );
+
+    -- Triggers to keep FTS in sync
+    CREATE TRIGGER IF NOT EXISTS emails_ai AFTER INSERT ON emails BEGIN
+      INSERT INTO emails_fts(rowid, subject, from_address, to_addresses, html, text_content)
+      VALUES (NEW.rowid, NEW.subject, NEW.from_address, NEW.to_addresses, NEW.html, NEW.text_content);
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS emails_ad AFTER DELETE ON emails BEGIN
+      INSERT INTO emails_fts(emails_fts, rowid, subject, from_address, to_addresses, html, text_content)
+      VALUES ('delete', OLD.rowid, OLD.subject, OLD.from_address, OLD.to_addresses, OLD.html, OLD.text_content);
+    END;
   `);
 }
