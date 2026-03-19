@@ -60,5 +60,10 @@ function initialize(db: Database.Database): void {
       INSERT INTO emails_fts(emails_fts, rowid, subject, from_address, to_addresses, html, text_content)
       VALUES ('delete', OLD.rowid, OLD.subject, OLD.from_address, OLD.to_addresses, OLD.html, OLD.text_content);
     END;
+
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
   `);
 }

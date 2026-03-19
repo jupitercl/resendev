@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import type { Email } from "@/types";
+import type { Attachment, Email } from "@/types";
 
 interface EmailDetailProps {
   id: string;
@@ -12,6 +12,24 @@ interface EmailDetailProps {
 
 interface EmailWithRaw extends Email {
   raw_request?: string;
+  attachments?: Attachment[] | null;
+  tags?: { name: string; value: string }[] | null;
+}
+
+function downloadAttachment(att: Attachment) {
+  const byteString = atob(att.content);
+  const ab = new ArrayBuffer(byteString.length);
+  const ia = new Uint8Array(ab);
+  for (let i = 0; i < byteString.length; i++) {
+    ia[i] = byteString.charCodeAt(i);
+  }
+  const blob = new Blob([ab], { type: att.content_type || "application/octet-stream" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = att.filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 export function EmailDetail({ id }: EmailDetailProps) {
@@ -92,6 +110,9 @@ export function EmailDetail({ id }: EmailDetailProps) {
           <TabsTrigger value="html" disabled={!email.html}>HTML</TabsTrigger>
           <TabsTrigger value="text" disabled={!email.text}>Text</TabsTrigger>
           <TabsTrigger value="source" disabled={!email.html}>Source</TabsTrigger>
+          <TabsTrigger value="attachments" disabled={!email.attachments?.length}>
+            Attachments{email.attachments?.length ? ` (${email.attachments.length})` : ""}
+          </TabsTrigger>
           <TabsTrigger value="headers">Headers</TabsTrigger>
           <TabsTrigger value="raw">Raw</TabsTrigger>
         </TabsList>
@@ -126,6 +147,28 @@ export function EmailDetail({ id }: EmailDetailProps) {
             </pre>
           ) : (
             <p className="text-muted-foreground py-8 text-center">No HTML source</p>
+          )}
+        </TabsContent>
+
+        <TabsContent value="attachments" className="mt-4">
+          {email.attachments && email.attachments.length > 0 ? (
+            <div className="space-y-2">
+              {email.attachments.map((att, i) => (
+                <div key={i} className="flex items-center justify-between bg-muted rounded-lg px-4 py-3">
+                  <div>
+                    <div className="text-sm font-medium">{att.filename}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {att.content_type || "unknown type"} · {Math.round(att.content.length * 0.75 / 1024)} KB
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => downloadAttachment(att)}>
+                    Download
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground py-8 text-center">No attachments</p>
           )}
         </TabsContent>
 

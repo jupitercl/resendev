@@ -88,6 +88,94 @@ export function getEmailCount(): number {
   return row.count;
 }
 
+export interface EmailStats {
+  total: number;
+  today: number;
+  topSenders: { address: string; count: number }[];
+  avgSizeBytes: number;
+  withAttachments: number;
+  emailsPerHour: { hour: string; count: number }[];
+}
+
+export function getStats(): EmailStats {
+  const db = getDb();
+
+  const total = (db.prepare("SELECT COUNT(*) as count FROM emails").get() as { count: number }).count;
+
+  const today = (db.prepare(
+    "SELECT COUNT(*) as count FROM emails WHERE created_at >= datetime('now', 'start of day')"
+  ).get() as { count: number }).count;
+
+  const topSenders = db.prepare(
+    "SELECT from_address as address, COUNT(*) as count FROM emails GROUP BY from_address ORDER BY count DESC LIMIT 5"
+  ).all() as { address: string; count: number }[];
+
+  const avgSize = (db.prepare(
+    "SELECT AVG(LENGTH(COALESCE(html, '') || COALESCE(text_content, ''))) as avg_size FROM emails"
+  ).get() as { avg_size: number | null });
+
+  const withAttachments = (db.prepare(
+    "SELECT COUNT(*) as count FROM emails WHERE attachments IS NOT NULL AND attachments != '[]'"
+  ).get() as { count: number }).count;
+
+  const emailsPerHour = db.prepare(`
+    SELECT strftime('%Y-%m-%dT%H:00:00Z', created_at) as hour, COUNT(*) as count
+    FROM emails
+    WHERE created_at >= datetime('now', '-24 hours')
+    GROUP BY hour
+    ORDER BY hour ASC
+  `).all() as { hour: string; count: number }[];
+
+  return {
+    total,
+    today,
+    topSenders,
+    avgSizeBytes: Math.round(avgSize.avg_size || 0),
+    withAttachments,
+    emailsPerHour,
+  };
+}
+
+export interface Settings {
+  delayMs: number;
+  errorRate: number;
+  theme: "light" | "dark" | "system";
+}
+
+const DEFAULT_SETTINGS: Settings = {
+  delayMs: 0,
+  errorRate: 0,
+  theme: "system",
+};
+
+export function getSettings(): Settings {
+  const db = getDb();
+  const rows = db.prepare("SELECT key, value FROM settings").all() as { key: string; value: string }[];
+  const saved: Record<string, string> = {};
+  for (const row of rows) {
+    saved[row.key] = row.value;
+  }
+  return {
+    delayMs: saved.delayMs ? parseInt(saved.delayMs, 10) : DEFAULT_SETTINGS.delayMs,
+    errorRate: saved.errorRate ? parseInt(saved.errorRate, 10) : DEFAULT_SETTINGS.errorRate,
+    theme: (saved.theme as Settings["theme"]) || DEFAULT_SETTINGS.theme,
+  };
+}
+
+export function updateSettings(updates: Partial<Settings>): Settings {
+  const db = getDb();
+  const upsert = db.prepare("INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value");
+  const txn = db.transaction(() => {
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== undefined) {
+        upsert.run(key, String(value));
+      }
+    }
+  });
+  txn();
+  return getSettings();
+}
+
 export function searchEmails(query: string): Email[] {
   const db = getDb();
   // Append * for prefix matching
