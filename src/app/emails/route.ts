@@ -1,20 +1,21 @@
 import { NextRequest } from "next/server";
 import { createEmailSchema, validateAuth } from "@/lib/validators";
-import { createEmail, listEmails } from "@/lib/store";
+import { createEmail, listEmails, getSettings } from "@/lib/store";
 import { broadcast } from "@/lib/sse";
-import { config } from "@/lib/config";
 
 export async function POST(request: NextRequest) {
   const authCheck = validateAuth(request);
   if (authCheck) return authCheck.error;
 
+  const settings = getSettings();
+
   // Simulated delay
-  if (config.delayMs > 0) {
-    await new Promise((resolve) => setTimeout(resolve, config.delayMs));
+  if (settings.delayMs > 0) {
+    await new Promise((resolve) => setTimeout(resolve, settings.delayMs));
   }
 
   // Error simulation
-  if (config.errorRate > 0 && Math.random() * 100 < config.errorRate) {
+  if (settings.errorRate > 0 && Math.random() * 100 < settings.errorRate) {
     return Response.json(
       { statusCode: 500, message: "Internal server error", name: "internal_server_error" },
       { status: 500 },

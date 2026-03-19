@@ -27,6 +27,8 @@ export async function GET(
     text: row.text_content,
     created_at: new Date(row.created_at + "Z").toISOString(),
     last_event: row.status,
+    attachments: row.attachments ? JSON.parse(row.attachments) : null,
+    tags: row.tags ? JSON.parse(row.tags) : null,
     raw_request: row.raw_request,
   });
 }
