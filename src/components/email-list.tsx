@@ -11,7 +11,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useEmailStream } from "@/hooks/use-email-stream";
+import { toast } from "sonner";
 import type { Email } from "@/types";
 
 function formatTime(iso: string): string {
@@ -136,21 +138,35 @@ export function EmailList({ searchResults }: EmailListProps) {
   };
 
   const deleteSelected = async () => {
+    const count = selectedIds.size;
     const ids = Array.from(selectedIds);
     await Promise.all(
       ids.map((id) => fetch(`/emails/${id}`, { method: "DELETE", headers: { Authorization: "Bearer resendev" } }))
     );
     setSelectedIds(new Set());
+    toast.success(`Deleted ${count} email${count !== 1 ? "s" : ""}`);
   };
 
   const clearAll = async () => {
-    await fetch("/api/emails", { method: "DELETE" });
+    if (!confirm("Delete all captured emails?")) return;
+    const res = await fetch("/api/emails", { method: "DELETE" });
+    const data = await res.json();
+    toast.success(`Cleared ${data.deleted} email${data.deleted !== 1 ? "s" : ""}`);
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20 text-muted-foreground">
-        Loading emails...
+      <div className="space-y-3">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-4 py-3">
+            <Skeleton className="h-4 w-4 rounded" />
+            <Skeleton className="h-4 w-[180px]" />
+            <Skeleton className="h-4 w-[180px] hidden md:block" />
+            <Skeleton className="h-4 flex-1" />
+            <Skeleton className="h-5 w-[70px] rounded-full hidden sm:block" />
+            <Skeleton className="h-4 w-[80px]" />
+          </div>
+        ))}
       </div>
     );
   }
@@ -227,9 +243,9 @@ export function EmailList({ searchResults }: EmailListProps) {
               />
             </TableHead>
             <TableHead className="w-[200px]">From</TableHead>
-            <TableHead className="w-[200px]">To</TableHead>
+            <TableHead className="w-[200px] hidden md:table-cell">To</TableHead>
             <TableHead>Subject</TableHead>
-            <TableHead className="w-[100px]">Status</TableHead>
+            <TableHead className="w-[100px] hidden sm:table-cell">Status</TableHead>
             <TableHead className="w-[120px] text-right">Time</TableHead>
           </TableRow>
         </TableHeader>
@@ -254,7 +270,7 @@ export function EmailList({ searchResults }: EmailListProps) {
                   {email.from}
                 </Link>
               </TableCell>
-              <TableCell>
+              <TableCell className="hidden md:table-cell">
                 <Link href={`/view/${email.id}`} className="block truncate">
                   {formatRecipients(email.to)}
                 </Link>
@@ -264,7 +280,7 @@ export function EmailList({ searchResults }: EmailListProps) {
                   {email.subject}
                 </Link>
               </TableCell>
-              <TableCell>
+              <TableCell className="hidden sm:table-cell">
                 <Badge variant={email.last_event === "delivered" ? "default" : "destructive"}>
                   {email.last_event}
                 </Badge>
