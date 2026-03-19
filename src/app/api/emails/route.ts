@@ -1,7 +1,15 @@
-import { listEmails, deleteAllEmails } from "@/lib/store";
+import { NextRequest } from "next/server";
+import { listEmails, deleteAllEmails, searchEmails } from "@/lib/store";
 import { broadcast } from "@/lib/sse";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const q = request.nextUrl.searchParams.get("q");
+
+  if (q && q.trim().length > 0) {
+    const emails = searchEmails(q.trim());
+    return Response.json({ data: emails });
+  }
+
   const emails = listEmails();
   return Response.json({ data: emails });
 }
