@@ -1,6 +1,6 @@
 services:
   resendev:
-    build: .
+    image: jupitercl/resendev:latest
     ports:
       - "3099:3099"
     volumes:
