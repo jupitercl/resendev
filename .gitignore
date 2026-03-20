@@ -42,3 +42,9 @@ resendev_data/
 SPEC.md
 ROADMAP.md
 PROMPT.md
+
+# Claude Code / AI tools
+.claude/
+.agents/
+CLAUDE.md
+skills-lock.json
