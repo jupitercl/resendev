@@ -14,7 +14,7 @@ Local development server that mocks the [Resend](https://resend.com) email API. 
 ### Docker (recommended)
 
 ```bash
-docker run -p 3099:3099 resendev/resendev
+docker run -p 3099:3099 jupitercl/resendev
 ```
 
 Open [http://localhost:3099](http://localhost:3099) in your browser.
@@ -24,7 +24,7 @@ Open [http://localhost:3099](http://localhost:3099) in your browser.
 ```yaml
 services:
   resendev:
-    image: resendev/resendev:latest
+    image: jupitercl/resendev:latest
     ports:
       - "3099:3099"
     volumes:
