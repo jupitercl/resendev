@@ -9,6 +9,12 @@ Local development server that mocks the [Resend](https://resend.com) email API. 
 - Works offline, zero external dependencies
 - Dark mode support
 
+![Email list](docs/screenshots/email-list.png)
+
+![Email detail](docs/screenshots/email-detail.png)
+
+![Dashboard](docs/screenshots/dashboard.png)
+
 ## Quick Start
 
 ### Docker (recommended)
