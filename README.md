@@ -1,5 +1,11 @@
 # Resendev
 
+[![Docker Image](https://img.shields.io/docker/v/jupitercl/resendev?label=Docker&sort=semver)](https://hub.docker.com/r/jupitercl/resendev)
+[![Docker Pulls](https://img.shields.io/docker/pulls/jupitercl/resendev)](https://hub.docker.com/r/jupitercl/resendev)
+[![GitHub Release](https://img.shields.io/github/v/release/jupitercl/resendev)](https://github.com/jupitercl/resendev/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Build](https://img.shields.io/github/actions/workflow/status/jupitercl/resendev/docker-publish.yml)](https://github.com/jupitercl/resendev/actions)
+
 Local development server that mocks the [Resend](https://resend.com) email API. Capture, inspect, and debug transactional emails without sending them to real recipients.
 
 - Drop-in replacement — just swap the base URL
