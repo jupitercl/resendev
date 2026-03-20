@@ -144,4 +144,4 @@ Delay and error rate can also be configured at runtime via the Settings page.
 
 ## License
 
-MIT
+[MIT](LICENSE)
