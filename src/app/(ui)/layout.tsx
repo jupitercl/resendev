@@ -12,6 +12,7 @@ export default function UILayout({
           </h1>
           <nav className="flex items-center gap-4 text-sm">
             <a href="/" className="text-muted-foreground hover:text-foreground">Emails</a>
+            <a href="/preview" className="text-muted-foreground hover:text-foreground">Preview</a>
             <a href="/dashboard" className="text-muted-foreground hover:text-foreground">Dashboard</a>
             <a href="/settings" className="text-muted-foreground hover:text-foreground">Settings</a>
           </nav>
