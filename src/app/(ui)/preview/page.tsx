@@ -128,6 +128,14 @@ export default function PreviewPage() {
         </Button>
       </div>
 
+      {/* Work in progress banner */}
+      <div className="rounded-lg border border-yellow-200 bg-yellow-50 dark:border-yellow-900 dark:bg-yellow-950 px-4 py-3">
+        <p className="text-sm text-yellow-800 dark:text-yellow-200">
+          <span className="font-medium">Preview is in development.</span>{" "}
+          Currently showing built-in sample templates. Custom template support (paste your own HTML or React Email JSX) is coming soon.
+        </p>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4">
         {/* Left panel: template picker + props editor */}
         <div className="space-y-4">
