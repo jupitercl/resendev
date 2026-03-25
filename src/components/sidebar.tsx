@@ -93,7 +93,7 @@ export function Sidebar() {
       <div className="px-3 py-3 border-t border-border">
         <div className="flex items-center justify-between">
           <span className="text-[11px] text-muted-foreground font-mono">localhost:3099</span>
-          <span className="text-[10px] text-muted-foreground/60">v0.3.0</span>
+          <span className="text-[10px] text-muted-foreground/60">v{process.env.APP_VERSION}</span>
         </div>
       </div>
     </aside>
