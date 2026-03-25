@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import "@fontsource-variable/inter";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -19,7 +20,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="antialiased">
         {children}
-        <Toaster position="bottom-right" />
+        <Toaster position="bottom-right" theme="dark" />
       </body>
     </html>
   );

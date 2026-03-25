@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { EmailStats } from "@/lib/store";
 
 export default function DashboardPage() {
@@ -19,91 +18,71 @@ export default function DashboardPage() {
   }, []);
 
   if (!stats) {
-    return <div className="py-20 text-center text-muted-foreground">Loading stats...</div>;
+    return <div className="py-20 text-center text-muted-foreground text-[13px]">Loading stats...</div>;
   }
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold">Dashboard</h2>
+      <h2 className="text-[15px] font-medium">Dashboard</h2>
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Emails</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Today</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.today}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Avg Size</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {stats.avgSizeBytes < 1024
-                ? `${stats.avgSizeBytes} B`
-                : `${(stats.avgSizeBytes / 1024).toFixed(1)} KB`}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">With Attachments</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.withAttachments}</div>
-          </CardContent>
-        </Card>
+        {[
+          { label: "Total Emails", value: stats.total },
+          { label: "Today", value: stats.today },
+          {
+            label: "Avg Size",
+            value: stats.avgSizeBytes < 1024
+              ? `${stats.avgSizeBytes} B`
+              : `${(stats.avgSizeBytes / 1024).toFixed(1)} KB`,
+          },
+          { label: "With Attachments", value: stats.withAttachments },
+        ].map((card) => (
+          <div key={card.label} className="border border-border rounded-lg p-4">
+            <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{card.label}</div>
+            <div className="text-2xl font-semibold mt-1">{card.value}</div>
+          </div>
+        ))}
       </div>
 
       {/* Top senders */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">Top Senders</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div className="border border-border rounded-lg">
+        <div className="px-4 py-3 border-b border-border">
+          <h3 className="text-[13px] font-medium">Top Senders</h3>
+        </div>
+        <div className="p-4">
           {stats.topSenders.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No emails yet</p>
+            <p className="text-[13px] text-muted-foreground">No emails yet</p>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {stats.topSenders.map((sender) => (
                 <div key={sender.address} className="flex items-center justify-between">
-                  <span className="text-sm font-mono truncate">{sender.address}</span>
-                  <span className="text-sm text-muted-foreground">{sender.count}</span>
+                  <span className="text-[13px] font-mono text-foreground/80 truncate">{sender.address}</span>
+                  <span className="text-[13px] text-muted-foreground tabular-nums">{sender.count}</span>
                 </div>
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Timeline */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">Emails per Hour (last 24h)</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div className="border border-border rounded-lg">
+        <div className="px-4 py-3 border-b border-border">
+          <h3 className="text-[13px] font-medium">Emails per Hour (last 24h)</h3>
+        </div>
+        <div className="p-4">
           {stats.emailsPerHour.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No data yet</p>
+            <p className="text-[13px] text-muted-foreground">No data yet</p>
           ) : (
-            <div className="flex items-end gap-1 h-32">
+            <div className="flex items-end gap-[3px] h-28">
               {stats.emailsPerHour.map((bucket) => {
                 const max = Math.max(...stats.emailsPerHour.map((b) => b.count));
                 const height = max > 0 ? (bucket.count / max) * 100 : 0;
                 return (
                   <div
                     key={bucket.hour}
-                    className="flex-1 bg-primary rounded-t min-w-1"
+                    className="flex-1 bg-foreground/20 hover:bg-foreground/40 rounded-sm min-w-[3px] transition-colors"
                     style={{ height: `${Math.max(height, 4)}%` }}
                     title={`${bucket.hour}: ${bucket.count} email(s)`}
                   />
@@ -111,8 +90,8 @@ export default function DashboardPage() {
               })}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
