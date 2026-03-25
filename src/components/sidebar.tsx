@@ -53,18 +53,21 @@ export function Sidebar() {
 
   return (
     <aside className="w-[220px] shrink-0 border-r border-border bg-sidebar flex flex-col h-screen sticky top-0">
-      {/* Logo */}
-      <div className="px-4 py-5">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="text-[15px] font-semibold text-foreground tracking-tight">Resendev</span>
+      {/* Header with avatar */}
+      <div className="px-3 py-4 flex items-center gap-2.5">
+        <div className="w-7 h-7 rounded-md bg-[#1a1a1a] border border-border flex items-center justify-center text-[12px] font-semibold text-foreground">
+          R
+        </div>
+        <Link href="/" className="flex items-center">
+          <span className="text-[14px] font-semibold text-foreground tracking-tight">Resendev</span>
         </Link>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-2 space-y-0.5">
+      <nav className="flex-1 px-2 space-y-0.5 mt-1">
         {navItems.map((item) => {
           const isActive = item.href === "/"
-            ? pathname === "/"
+            ? pathname === "/" || pathname.startsWith("/view")
             : pathname.startsWith(item.href);
 
           return (
@@ -87,7 +90,7 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="px-4 py-3 border-t border-border">
+      <div className="px-3 py-3 border-t border-border">
         <div className="flex items-center justify-between">
           <span className="text-[11px] text-muted-foreground font-mono">localhost:3099</span>
           <span className="text-[10px] text-muted-foreground/60">v0.3.0</span>

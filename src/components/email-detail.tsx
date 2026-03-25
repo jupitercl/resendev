@@ -31,6 +31,33 @@ function downloadAttachment(att: Attachment) {
   URL.revokeObjectURL(url);
 }
 
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  return (
+    <button
+      onClick={() => {
+        navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }}
+      className="text-muted-foreground hover:text-foreground transition-colors"
+      title="Copy to clipboard"
+    >
+      {copied ? (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20 6 9 17l-5-5" />
+        </svg>
+      ) : (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+          <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
 export function EmailDetail({ id }: EmailDetailProps) {
   const [email, setEmail] = useState<EmailWithRaw | null>(null);
   const [loading, setLoading] = useState(true);
@@ -75,50 +102,97 @@ export function EmailDetail({ id }: EmailDetailProps) {
   }
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <button
-          onClick={() => router.push("/")}
-          className="text-[13px] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="m15 18-6-6 6-6" />
-          </svg>
-          Back
-        </button>
-        <span className="text-[11px] text-muted-foreground font-mono">{email.id}</span>
-      </div>
+    <div className="space-y-6">
+      {/* Back link */}
+      <button
+        onClick={() => router.push("/")}
+        className="text-[13px] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="m15 18-6-6 6-6" />
+        </svg>
+        Emails
+      </button>
 
-      {/* Header */}
-      <div className="space-y-2 pb-4 border-b border-border">
-        <h2 className="text-[17px] font-medium">{email.subject}</h2>
-        <div className="grid grid-cols-[60px_1fr] gap-y-1 text-[13px]">
-          <span className="text-muted-foreground">From</span>
-          <span>{email.from}</span>
-          <span className="text-muted-foreground">To</span>
-          <span>{email.to.join(", ")}</span>
-          {email.cc && (
-            <>
-              <span className="text-muted-foreground">Cc</span>
-              <span>{email.cc.join(", ")}</span>
-            </>
-          )}
-          {email.bcc && (
-            <>
-              <span className="text-muted-foreground">Bcc</span>
-              <span>{email.bcc.join(", ")}</span>
-            </>
-          )}
-          <span className="text-muted-foreground">Date</span>
-          <span className="text-muted-foreground">{new Date(email.created_at).toLocaleString()}</span>
+      {/* Header with icon */}
+      <div className="flex items-start gap-4">
+        <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center shrink-0">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
+            <rect width="20" height="16" x="2" y="4" rx="2" stroke="currentColor" />
+            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" stroke="currentColor" />
+          </svg>
+        </div>
+        <div>
+          <div className="text-[12px] text-muted-foreground mb-1">Email</div>
+          <h1 className="text-[20px] font-semibold tracking-tight">{email.to.join(", ")}</h1>
         </div>
       </div>
 
-      <Tabs defaultValue="html" className="w-full">
+      {/* Horizontal metadata row */}
+      <div className="flex flex-wrap gap-8 py-4 border-y border-border">
+        <div>
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">From</div>
+          <div className="text-[13px] text-foreground">{email.from}</div>
+        </div>
+        <div>
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Subject</div>
+          <div className="text-[13px] text-foreground">{email.subject}</div>
+        </div>
+        <div>
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">To</div>
+          <div className="text-[13px] text-foreground">{email.to.join(", ")}</div>
+        </div>
+        {email.cc && (
+          <div>
+            <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Cc</div>
+            <div className="text-[13px] text-foreground">{email.cc.join(", ")}</div>
+          </div>
+        )}
+        {email.bcc && (
+          <div>
+            <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Bcc</div>
+            <div className="text-[13px] text-foreground">{email.bcc.join(", ")}</div>
+          </div>
+        )}
+        <div>
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">ID</div>
+          <div className="text-[13px] text-foreground font-mono flex items-center gap-2">
+            {email.id}
+            <CopyButton text={email.id} />
+          </div>
+        </div>
+      </div>
+
+      {/* Email Events timeline */}
+      <div>
+        <h3 className="text-[11px] uppercase tracking-wider text-muted-foreground mb-3">Email Events</h3>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-green-400" />
+            <span className="text-[12px] text-foreground">Sent</span>
+            <span className="text-[11px] text-muted-foreground ml-1">
+              {new Date(email.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+            </span>
+          </div>
+          <div className="w-8 h-px bg-border" />
+          <div className="flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full ${email.last_event === "delivered" ? "bg-green-400" : "bg-muted-foreground"}`} />
+            <span className="text-[12px] text-foreground">
+              {email.last_event.charAt(0).toUpperCase() + email.last_event.slice(1)}
+            </span>
+            <span className="text-[11px] text-muted-foreground ml-1">
+              {new Date(email.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <Tabs defaultValue="preview" className="w-full">
         <TabsList className="bg-muted/30 border border-border">
+          <TabsTrigger value="preview" disabled={!email.html} className="text-[12px]">Preview</TabsTrigger>
+          <TabsTrigger value="text" disabled={!email.text} className="text-[12px]">Plain Text</TabsTrigger>
           <TabsTrigger value="html" disabled={!email.html} className="text-[12px]">HTML</TabsTrigger>
-          <TabsTrigger value="text" disabled={!email.text} className="text-[12px]">Text</TabsTrigger>
-          <TabsTrigger value="source" disabled={!email.html} className="text-[12px]">Source</TabsTrigger>
           <TabsTrigger value="attachments" disabled={!email.attachments?.length} className="text-[12px]">
             Attachments{email.attachments?.length ? ` (${email.attachments.length})` : ""}
           </TabsTrigger>
@@ -126,7 +200,7 @@ export function EmailDetail({ id }: EmailDetailProps) {
           <TabsTrigger value="raw" className="text-[12px]">Raw</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="html" className="mt-4">
+        <TabsContent value="preview" className="mt-4">
           {email.html ? (
             <iframe
               srcDoc={email.html}
@@ -149,7 +223,7 @@ export function EmailDetail({ id }: EmailDetailProps) {
           )}
         </TabsContent>
 
-        <TabsContent value="source" className="mt-4">
+        <TabsContent value="html" className="mt-4">
           {email.html ? (
             <pre className="bg-muted/30 border border-border rounded-lg p-4 text-[12px] font-mono whitespace-pre-wrap overflow-x-auto text-foreground/80">
               {email.html}

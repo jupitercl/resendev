@@ -16,13 +16,24 @@ function formatTime(iso: string): string {
   if (diffMins < 60) return `${diffMins}m ago`;
   const diffHours = Math.floor(diffMins / 60);
   if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 30) return `${diffDays} day${diffDays !== 1 ? "s" : ""} ago`;
 
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
 function formatRecipients(to: string[]): string {
   if (to.length === 1) return to[0];
   return `${to[0]} +${to.length - 1}`;
+}
+
+function EnvelopeIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-green-400 shrink-0">
+      <rect width="20" height="16" x="2" y="4" rx="2" stroke="currentColor" />
+      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" stroke="currentColor" />
+    </svg>
+  );
 }
 
 interface EmailListProps {
@@ -224,7 +235,7 @@ export function EmailList({ searchResults }: EmailListProps) {
       </div>
 
       {/* Table header */}
-      <div className="flex items-center gap-3 px-3 py-2 text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border">
+      <div className="flex items-center gap-3 px-3 py-2 text-[12px] text-muted-foreground border-b border-border">
         <div className="w-5">
           <input
             type="checkbox"
@@ -233,19 +244,19 @@ export function EmailList({ searchResults }: EmailListProps) {
             className="rounded border-muted-foreground/30 bg-transparent"
           />
         </div>
-        <div className="w-[180px]">From</div>
-        <div className="w-[180px] hidden md:block">To</div>
+        <div className="w-[200px]">To</div>
+        <div className="w-[80px] hidden sm:block">Status</div>
         <div className="flex-1">Subject</div>
-        <div className="w-[70px] hidden sm:block">Status</div>
-        <div className="w-[80px] text-right">Time</div>
+        <div className="w-[90px] text-right">Sent</div>
       </div>
 
       {/* Rows */}
       <div>
         {displayEmails.map((email, index) => (
-          <div
+          <Link
             key={email.id}
-            className={`flex items-center gap-3 px-3 py-2.5 border-b border-border transition-colors cursor-pointer group ${
+            href={`/view/${email.id}`}
+            className={`flex items-center gap-3 px-3 py-2.5 border-b border-border transition-colors group ${
               focusIndex === index ? "bg-accent" : "hover:bg-accent/50"
             }`}
             onClick={() => setFocusIndex(index)}
@@ -258,34 +269,32 @@ export function EmailList({ searchResults }: EmailListProps) {
                 className="rounded border-muted-foreground/30 bg-transparent"
               />
             </div>
-            <div className="w-[180px] truncate">
-              <Link href={`/view/${email.id}`} className="text-[13px] text-foreground/80 hover:text-foreground">
-                {email.from}
-              </Link>
-            </div>
-            <div className="w-[180px] truncate hidden md:block">
-              <Link href={`/view/${email.id}`} className="text-[13px] text-muted-foreground">
+            <div className="w-[200px] truncate flex items-center gap-2">
+              <EnvelopeIcon />
+              <span className="text-[13px] text-foreground/90 truncate">
                 {formatRecipients(email.to)}
-              </Link>
-            </div>
-            <div className="flex-1 truncate">
-              <Link href={`/view/${email.id}`} className="text-[13px] text-foreground group-hover:text-foreground">
-                {email.subject}
-              </Link>
-            </div>
-            <div className="w-[70px] hidden sm:block">
-              <span className={`inline-flex items-center text-[11px] px-1.5 py-0.5 rounded ${
-                email.last_event === "delivered"
-                  ? "text-green-400 bg-green-400/10"
-                  : "text-red-400 bg-red-400/10"
-              }`}>
-                {email.last_event}
               </span>
             </div>
-            <div className="w-[80px] text-right text-[12px] text-muted-foreground">
+            <div className="w-[80px] hidden sm:block">
+              <span className={`text-[12px] ${
+                email.last_event === "delivered"
+                  ? "text-green-400"
+                  : email.last_event === "bounced"
+                    ? "text-red-400"
+                    : "text-muted-foreground"
+              }`}>
+                {email.last_event.charAt(0).toUpperCase() + email.last_event.slice(1)}
+              </span>
+            </div>
+            <div className="flex-1 truncate">
+              <span className="text-[13px] text-foreground/70 group-hover:text-foreground/90">
+                {email.subject}
+              </span>
+            </div>
+            <div className="w-[90px] text-right text-[12px] text-muted-foreground">
               {formatTime(email.created_at)}
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>
