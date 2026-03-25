@@ -83,6 +83,16 @@ await resend.emails.send({
 });
 ```
 
+### Resend CLI
+
+```bash
+RESEND_BASE_URL=http://localhost:3099 RESEND_API_KEY=re_any_key_works resend emails send \
+  --from "noreply@myapp.com" \
+  --to "user@example.com" \
+  --subject "Hello!" \
+  --html "<h1>Hi there</h1>"
+```
+
 ### curl
 
 ```bash
