@@ -33,11 +33,16 @@ export default function HomePage() {
   }, [searchQuery, doSearch]);
 
   return (
-    <div className="space-y-4">
-      <SearchBar value={searchQuery} onChange={setSearchQuery} />
-      {searching && (
-        <p className="text-sm text-muted-foreground">Searching...</p>
-      )}
+    <div>
+      <h1 className="text-[22px] font-semibold tracking-tight mb-6">Emails</h1>
+      <div className="flex items-center gap-3 mb-5">
+        <div className="flex-1 max-w-md">
+          <SearchBar value={searchQuery} onChange={setSearchQuery} />
+        </div>
+        {searching && (
+          <span className="text-[12px] text-muted-foreground">Searching...</span>
+        )}
+      </div>
       <EmailList searchResults={searchResults} />
     </div>
   );

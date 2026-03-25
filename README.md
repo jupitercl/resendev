@@ -61,22 +61,21 @@ Point your app at `http://localhost:3099` instead of `https://api.resend.com`:
 
 ```env
 # .env.development
-RESEND_API_URL=http://localhost:3099
+RESEND_BASE_URL=http://localhost:3099
 ```
+
+The Resend SDK (v6) reads `RESEND_BASE_URL` from `process.env` automatically — no constructor options needed.
 
 ### Resend Node.js SDK
 
 ```typescript
 import { Resend } from "resend";
 
+// Just set RESEND_BASE_URL=http://localhost:3099 in your .env.development
+// The SDK picks it up automatically — no code changes required
 const resend = new Resend("re_any_key_works");
 
-// In development, point to Resendev
-const client = process.env.NODE_ENV === "development"
-  ? new Resend("re_dev", { baseUrl: "http://localhost:3099" })
-  : resend;
-
-await client.emails.send({
+await resend.emails.send({
   from: "noreply@myapp.com",
   to: "user@example.com",
   subject: "Welcome!",

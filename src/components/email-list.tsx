@@ -2,16 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useEmailStream } from "@/hooks/use-email-stream";
 import { toast } from "sonner";
 import type { Email } from "@/types";
@@ -26,13 +16,24 @@ function formatTime(iso: string): string {
   if (diffMins < 60) return `${diffMins}m ago`;
   const diffHours = Math.floor(diffMins / 60);
   if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 30) return `${diffDays} day${diffDays !== 1 ? "s" : ""} ago`;
 
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
 function formatRecipients(to: string[]): string {
   if (to.length === 1) return to[0];
   return `${to[0]} +${to.length - 1}`;
+}
+
+function EnvelopeIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-green-400 shrink-0">
+      <rect width="20" height="16" x="2" y="4" rx="2" stroke="currentColor" />
+      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" stroke="currentColor" />
+    </svg>
+  );
 }
 
 interface EmailListProps {
@@ -57,12 +58,10 @@ export function EmailList({ searchResults }: EmailListProps) {
     }
   }, []);
 
-  // Initial fetch
   useEffect(() => {
     fetchEmails();
   }, [fetchEmails]);
 
-  // SSE real-time updates
   const { connected } = useEmailStream((event) => {
     switch (event.type) {
       case "email:new":
@@ -83,14 +82,11 @@ export function EmailList({ searchResults }: EmailListProps) {
     }
   });
 
-  // Use search results when available, otherwise use live emails
   const displayEmails = searchResults ?? emails;
 
-  // Keyboard navigation
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-
       switch (e.key) {
         case "j":
           setFocusIndex((prev) => Math.min(prev + 1, displayEmails.length - 1));
@@ -130,7 +126,7 @@ export function EmailList({ searchResults }: EmailListProps) {
   };
 
   const toggleSelectAll = () => {
-    if (selectedIds.size === emails.length) {
+    if (selectedIds.size === displayEmails.length) {
       setSelectedIds(new Set());
     } else {
       setSelectedIds(new Set(displayEmails.map((e) => e.id)));
@@ -156,15 +152,14 @@ export function EmailList({ searchResults }: EmailListProps) {
 
   if (loading) {
     return (
-      <div className="space-y-3">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-4 py-3">
-            <Skeleton className="h-4 w-4 rounded" />
-            <Skeleton className="h-4 w-[180px]" />
-            <Skeleton className="h-4 w-[180px] hidden md:block" />
-            <Skeleton className="h-4 flex-1" />
-            <Skeleton className="h-5 w-[70px] rounded-full hidden sm:block" />
-            <Skeleton className="h-4 w-[80px]" />
+      <div className="space-y-0">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-4 py-3 px-3 border-b border-border">
+            <div className="h-3 w-3 rounded bg-muted animate-pulse" />
+            <div className="h-3 w-[140px] rounded bg-muted animate-pulse" />
+            <div className="h-3 w-[140px] rounded bg-muted animate-pulse hidden md:block" />
+            <div className="h-3 flex-1 rounded bg-muted animate-pulse" />
+            <div className="h-3 w-[60px] rounded bg-muted animate-pulse" />
           </div>
         ))}
       </div>
@@ -173,14 +168,21 @@ export function EmailList({ searchResults }: EmailListProps) {
 
   if (displayEmails.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
-        <div className="text-4xl">📭</div>
-        <h2 className="text-xl font-semibold">{searchResults ? "No results found" : "No emails captured yet"}</h2>
-        <p className="text-muted-foreground max-w-md">
-          Point your app at <code className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono">http://localhost:3099</code> and
-          send an email through the Resend SDK to see it here.
-        </p>
-        <pre className="bg-muted rounded-lg p-4 text-sm text-left font-mono max-w-lg w-full overflow-x-auto">
+      <div className="flex flex-col items-center justify-center py-24 gap-5 text-center">
+        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground">
+            <rect width="20" height="16" x="2" y="4" rx="2" />
+            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+          </svg>
+        </div>
+        <div>
+          <h2 className="text-[15px] font-medium">{searchResults ? "No results found" : "No emails captured yet"}</h2>
+          <p className="text-[13px] text-muted-foreground mt-1 max-w-sm">
+            Point your app at <code className="text-foreground/70 bg-muted px-1 py-0.5 rounded text-xs font-mono">http://localhost:3099</code> and
+            send an email through the Resend SDK.
+          </p>
+        </div>
+        <pre className="bg-muted/50 border border-border rounded-lg p-4 text-xs text-left font-mono text-muted-foreground max-w-lg w-full overflow-x-auto">
 {`curl -X POST http://localhost:3099/emails \\
   -H "Authorization: Bearer re_test_123" \\
   -H "Content-Type: application/json" \\
@@ -192,106 +194,109 @@ export function EmailList({ searchResults }: EmailListProps) {
   }'`}
         </pre>
         {connected && (
-          <p className="text-xs text-muted-foreground">
-            Listening for emails...
-          </p>
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+            Listening for emails
+          </div>
         )}
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
+    <div>
       {/* Toolbar */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-1 px-3">
         <div className="flex items-center gap-3">
           {selectedIds.size > 0 && (
             <>
-              <span className="text-sm text-muted-foreground">{selectedIds.size} selected</span>
+              <span className="text-[12px] text-muted-foreground">{selectedIds.size} selected</span>
               <button
                 onClick={deleteSelected}
-                className="text-sm text-destructive hover:underline"
+                className="text-[12px] text-destructive hover:underline"
               >
-                Delete selected
+                Delete
               </button>
             </>
           )}
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            {connected && <span className="w-1.5 h-1.5 rounded-full bg-green-500" />}
             {displayEmails.length} email{displayEmails.length !== 1 ? "s" : ""}
-            {connected && " · live"}
-          </span>
+          </div>
           <button
             onClick={clearAll}
-            className="text-sm text-muted-foreground hover:text-destructive"
+            className="text-[12px] text-muted-foreground hover:text-destructive transition-colors"
           >
             Clear all
           </button>
         </div>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[40px]">
+      {/* Table header */}
+      <div className="flex items-center gap-3 px-3 py-2 text-[12px] text-muted-foreground border-b border-border">
+        <div className="w-5">
+          <input
+            type="checkbox"
+            checked={selectedIds.size === displayEmails.length && displayEmails.length > 0}
+            onChange={toggleSelectAll}
+            className="rounded border-muted-foreground/30 bg-transparent"
+          />
+        </div>
+        <div className="w-[200px]">To</div>
+        <div className="w-[80px] hidden sm:block">Status</div>
+        <div className="flex-1">Subject</div>
+        <div className="w-[90px] text-right">Sent</div>
+      </div>
+
+      {/* Rows */}
+      <div>
+        {displayEmails.map((email, index) => (
+          <Link
+            key={email.id}
+            href={`/view/${email.id}`}
+            className={`flex items-center gap-3 px-3 py-2.5 border-b border-border transition-colors group ${
+              focusIndex === index ? "bg-accent" : "hover:bg-accent/50"
+            }`}
+            onClick={() => setFocusIndex(index)}
+          >
+            <div className="w-5" onClick={(e) => e.stopPropagation()}>
               <input
                 type="checkbox"
-                checked={selectedIds.size === displayEmails.length && displayEmails.length > 0}
-                onChange={toggleSelectAll}
-                className="rounded"
+                checked={selectedIds.has(email.id)}
+                onChange={() => toggleSelect(email.id)}
+                className="rounded border-muted-foreground/30 bg-transparent"
               />
-            </TableHead>
-            <TableHead className="w-[200px]">From</TableHead>
-            <TableHead className="w-[200px] hidden md:table-cell">To</TableHead>
-            <TableHead>Subject</TableHead>
-            <TableHead className="w-[100px] hidden sm:table-cell">Status</TableHead>
-            <TableHead className="w-[120px] text-right">Time</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {displayEmails.map((email, index) => (
-            <TableRow
-              key={email.id}
-              className={`cursor-pointer ${focusIndex === index ? "bg-accent" : ""}`}
-              onClick={() => setFocusIndex(index)}
-            >
-              <TableCell>
-                <input
-                  type="checkbox"
-                  checked={selectedIds.has(email.id)}
-                  onChange={() => toggleSelect(email.id)}
-                  onClick={(e) => e.stopPropagation()}
-                  className="rounded"
-                />
-              </TableCell>
-              <TableCell>
-                <Link href={`/view/${email.id}`} className="block truncate hover:underline">
-                  {email.from}
-                </Link>
-              </TableCell>
-              <TableCell className="hidden md:table-cell">
-                <Link href={`/view/${email.id}`} className="block truncate">
-                  {formatRecipients(email.to)}
-                </Link>
-              </TableCell>
-              <TableCell>
-                <Link href={`/view/${email.id}`} className="block truncate font-medium">
-                  {email.subject}
-                </Link>
-              </TableCell>
-              <TableCell className="hidden sm:table-cell">
-                <Badge variant={email.last_event === "delivered" ? "default" : "destructive"}>
-                  {email.last_event}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-right text-muted-foreground text-sm">
-                {formatTime(email.created_at)}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+            </div>
+            <div className="w-[200px] truncate flex items-center gap-2">
+              <EnvelopeIcon />
+              <span className="text-[13px] text-foreground/90 truncate">
+                {formatRecipients(email.to)}
+              </span>
+            </div>
+            <div className="w-[80px] hidden sm:block">
+              <span className={`text-[12px] ${
+                email.last_event === "delivered"
+                  ? "text-green-400"
+                  : email.last_event === "bounced"
+                    ? "text-red-400"
+                    : "text-muted-foreground"
+              }`}>
+                {email.last_event.charAt(0).toUpperCase() + email.last_event.slice(1)}
+              </span>
+            </div>
+            <div className="flex-1 truncate">
+              <span className="text-[13px] text-foreground/70 group-hover:text-foreground/90">
+                {email.subject}
+              </span>
+            </div>
+            <div className="w-[90px] text-right text-[12px] text-muted-foreground">
+              {formatTime(email.created_at)}
+            </div>
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }

@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface Settings {
   delayMs: number;
@@ -32,25 +30,6 @@ export default function SettingsPage() {
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
-
-    // Apply theme immediately
-    if (updates.theme) {
-      applyTheme(updates.theme);
-    }
-  };
-
-  const applyTheme = (theme: string) => {
-    if (theme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else if (theme === "light") {
-      document.documentElement.classList.remove("dark");
-    } else {
-      if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-        document.documentElement.classList.add("dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-      }
-    }
   };
 
   const exportEmails = async () => {
@@ -66,22 +45,22 @@ export default function SettingsPage() {
   };
 
   if (!settings) {
-    return <div className="py-20 text-center text-muted-foreground">Loading settings...</div>;
+    return <div className="py-20 text-center text-muted-foreground text-[13px]">Loading settings...</div>;
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
-      <h2 className="text-xl font-semibold">Settings</h2>
+    <div className="space-y-6 max-w-xl">
+      <h2 className="text-[15px] font-medium">Settings</h2>
 
       {/* Error Simulation */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">Error Simulation</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <div className="border border-border rounded-lg">
+        <div className="px-4 py-3 border-b border-border">
+          <h3 className="text-[13px] font-medium">Error Simulation</h3>
+        </div>
+        <div className="p-4 space-y-4">
           <div>
-            <label className="text-sm font-medium">API Response Delay (ms)</label>
-            <p className="text-xs text-muted-foreground mb-2">
+            <label className="text-[13px] font-medium">API Response Delay (ms)</label>
+            <p className="text-[11px] text-muted-foreground mt-0.5 mb-2">
               Simulate network latency on POST /emails
             </p>
             <input
@@ -91,12 +70,12 @@ export default function SettingsPage() {
               step="100"
               value={settings.delayMs}
               onChange={(e) => setSettings({ ...settings, delayMs: parseInt(e.target.value) || 0 })}
-              className="w-32 px-3 py-1.5 text-sm border rounded-md bg-background"
+              className="w-32 px-3 py-1.5 text-[13px] border border-border rounded-md bg-muted/30 text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             />
           </div>
           <div>
-            <label className="text-sm font-medium">Error Rate (%)</label>
-            <p className="text-xs text-muted-foreground mb-2">
+            <label className="text-[13px] font-medium">Error Rate (%)</label>
+            <p className="text-[11px] text-muted-foreground mt-0.5 mb-2">
               Percentage of POST /emails requests that return 500 errors
             </p>
             <input
@@ -105,50 +84,36 @@ export default function SettingsPage() {
               max="100"
               value={settings.errorRate}
               onChange={(e) => setSettings({ ...settings, errorRate: parseInt(e.target.value) || 0 })}
-              className="w-32 px-3 py-1.5 text-sm border rounded-md bg-background"
+              className="w-32 px-3 py-1.5 text-[13px] border border-border rounded-md bg-muted/30 text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             />
           </div>
-          <Button onClick={() => save({ delayMs: settings.delayMs, errorRate: settings.errorRate })} disabled={saving}>
-            {saving ? "Saving..." : "Save"}
-          </Button>
-          {saved && <span className="text-sm text-green-600 ml-2">Saved</span>}
-        </CardContent>
-      </Card>
-
-      {/* Theme */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">Appearance</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-2">
-            {(["light", "dark", "system"] as const).map((t) => (
-              <Button
-                key={t}
-                variant={settings.theme === t ? "default" : "outline"}
-                size="sm"
-                onClick={() => save({ theme: t })}
-              >
-                {t.charAt(0).toUpperCase() + t.slice(1)}
-              </Button>
-            ))}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => save({ delayMs: settings.delayMs, errorRate: settings.errorRate })}
+              disabled={saving}
+              className="px-3 py-1.5 text-[12px] font-medium bg-foreground text-background rounded-md hover:bg-foreground/90 transition-colors disabled:opacity-50"
+            >
+              {saving ? "Saving..." : "Save"}
+            </button>
+            {saved && <span className="text-[12px] text-green-400">Saved</span>}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Data */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">Data</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div>
-            <Button variant="outline" onClick={exportEmails}>
-              Export all emails as JSON
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="border border-border rounded-lg">
+        <div className="px-4 py-3 border-b border-border">
+          <h3 className="text-[13px] font-medium">Data</h3>
+        </div>
+        <div className="p-4">
+          <button
+            onClick={exportEmails}
+            className="px-3 py-1.5 text-[12px] font-medium border border-border rounded-md hover:bg-accent transition-colors"
+          >
+            Export all emails as JSON
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
