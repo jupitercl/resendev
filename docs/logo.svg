@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 80" width="400" height="80">
+  <rect width="400" height="80" fill="#0a0a0a" rx="12"/>
+  <text
+    x="32"
+    y="52"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="52"
+    font-weight="700"
+    fill="#ffffff"
+    letter-spacing="-2"
+  >resenDev</text>
+  <!-- Acento bajo la D -->
+  <rect x="190" y="56" width="37" height="3" rx="1.5" fill="#ffffff"/>
+</svg>

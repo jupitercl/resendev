@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 36" width="192" height="36">
+  <!-- Pill background -->
+  <rect width="192" height="36" rx="18" fill="#1a1a1a" stroke="#333333" stroke-width="1"/>
+  <!-- Green dot -->
+  <circle cx="20" cy="18" r="4" fill="#22c55e" opacity="0.85"/>
+  <!-- Wordmark -->
+  <text
+    x="33"
+    y="24"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="16"
+    font-weight="700"
+    fill="#ffffff"
+    letter-spacing="-0.5"
+  >resenDev</text>
+  <!-- Acento bajo la D -->
+  <rect x="90" y="26" width="12" height="2" rx="1" fill="#ffffff"/>
+</svg>
