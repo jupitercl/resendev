@@ -61,22 +61,32 @@ npm run dev
 
 ## Usage
 
-Point your app at `http://localhost:3099` instead of `https://api.resend.com`:
+Point your app at `http://localhost:3099` instead of `https://api.resend.com`. Each Resend SDK reads the base URL from an environment variable automatically — no code changes needed.
+
+### SDK Configuration
+
+| SDK | Env var | Docs |
+|-----|---------|------|
+| **Node.js** | `RESEND_BASE_URL=http://localhost:3099` | [resend-node](https://github.com/resend/resend-node) |
+| **Python** | `RESEND_API_URL=http://localhost:3099` | [resend-python](https://github.com/resend/resend-python) |
+| **Go** | `RESEND_BASE_URL=http://localhost:3099` | [resend-go](https://github.com/resend/resend-go) |
+| **Ruby** | `RESEND_BASE_URL=http://localhost:3099` | [resend-ruby](https://github.com/resend/resend-ruby) |
+| **Rust** | `RESEND_BASE_URL=http://localhost:3099` | [resend-rust](https://github.com/resend/resend-rust) |
+| **PHP** | `RESEND_BASE_URL=http://localhost:3099` | [resend-php](https://github.com/resend/resend-php) |
+| **Java** | Not supported (hardcoded base URL) | [resend-java](https://github.com/resend/resend-java) |
+
+> **Note:** Python uses `RESEND_API_URL` while all other SDKs use `RESEND_BASE_URL`.
+
+### Example (Node.js)
 
 ```env
 # .env.development
 RESEND_BASE_URL=http://localhost:3099
 ```
 
-The Resend SDK (v6) reads `RESEND_BASE_URL` from `process.env` automatically — no constructor options needed.
-
-### Resend Node.js SDK
-
 ```typescript
 import { Resend } from "resend";
 
-// Just set RESEND_BASE_URL=http://localhost:3099 in your .env.development
-// The SDK picks it up automatically — no code changes required
 const resend = new Resend("re_any_key_works");
 
 await resend.emails.send({
