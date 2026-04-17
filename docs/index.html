@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>resenDev — Local Resend Mock Server</title>
+  <meta name="description" content="Local development server that mocks the Resend email API. Capture, inspect, and debug transactional emails without sending them." />
+  <meta property="og:title" content="resenDev — Local Resend Mock Server" />
+  <meta property="og:description" content="Capture, inspect, and debug transactional emails without sending them. Drop-in Resend replacement for local dev." />
+  <meta property="og:type" content="website" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black:   #080808;
+      --surface: #111111;
+      --border:  #222222;
+      --muted:   #555555;
+      --text:    #e8e8e8;
+      --white:   #ffffff;
+      --green:   #22c55e;
+      --green-dim: rgba(34,197,94,.12);
+      --mono:    'JetBrains Mono', monospace;
+      --serif:   'Instrument Serif', Georgia, serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--black);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 40px;
+      height: 56px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(8,8,8,.85);
+      backdrop-filter: blur(12px);
+    }
+
+    .nav-logo {
+      font-family: var(--serif);
+      font-size: 20px;
+      color: var(--white);
+      text-decoration: none;
+      letter-spacing: -.5px;
+    }
+    .nav-logo span { color: var(--white); }
+    .nav-logo em {
+      font-style: normal;
+      position: relative;
+      display: inline-block;
+    }
+    .nav-logo em::after {
+      content: '';
+      position: absolute;
+      bottom: -2px; left: 0; right: 0;
+      height: 2px;
+      background: var(--white);
+      border-radius: 1px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      list-style: none;
+    }
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 12px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      transition: color .2s;
+    }
+    .nav-links a:hover { color: var(--white); }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 120px 40px 80px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 60px 60px;
+      opacity: .35;
+      mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 30%, transparent 100%);
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      margin-bottom: 40px;
+      position: relative;
+    }
+    .hero-badge::before {
+      content: '';
+      width: 6px; height: 6px;
+      background: var(--green);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--green);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .4; }
+    }
+
+    .hero-title {
+      font-family: var(--serif);
+      font-size: clamp(64px, 10vw, 140px);
+      line-height: .92;
+      color: var(--white);
+      letter-spacing: -3px;
+      margin-bottom: 28px;
+      position: relative;
+    }
+    .hero-title .accent {
+      color: var(--white);
+      position: relative;
+      display: inline-block;
+    }
+    .hero-title .accent::after {
+      content: '';
+      position: absolute;
+      bottom: 4px; left: 0;
+      width: 100%; height: 4px;
+      background: var(--white);
+      border-radius: 2px;
+    }
+
+    .hero-sub {
+      font-size: 16px;
+      color: var(--muted);
+      max-width: 480px;
+      line-height: 1.7;
+      margin-bottom: 52px;
+      position: relative;
+    }
+    .hero-sub strong { color: var(--text); font-weight: 500; }
+
+    .hero-cmd {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 20px;
+      position: relative;
+      max-width: 480px;
+      width: 100%;
+    }
+    .hero-cmd-prompt {
+      padding: 14px 16px;
+      color: var(--green);
+      font-size: 14px;
+      border-right: 1px solid var(--border);
+      user-select: none;
+    }
+    .hero-cmd-text {
+      flex: 1;
+      padding: 14px 16px;
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--white);
+      letter-spacing: .01em;
+    }
+    .hero-cmd-copy {
+      padding: 14px 16px;
+      border: none;
+      background: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      border-left: 1px solid var(--border);
+      transition: color .2s, background .2s;
+    }
+    .hero-cmd-copy:hover { color: var(--green); background: var(--green-dim); }
+    .hero-cmd-copy.copied { color: var(--green); }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: relative;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 7px;
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: all .2s;
+      cursor: pointer;
+      border: none;
+    }
+    .btn-primary {
+      background: var(--white);
+      color: var(--black);
+      font-weight: 500;
+    }
+    .btn-primary:hover { background: #e0e0e0; }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { color: var(--white); border-color: #444; }
+
+    /* ── SCREENSHOT ── */
+    .screenshots {
+      padding: 0 40px 100px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .screenshot-tabs {
+      display: flex;
+      gap: 2px;
+      margin-bottom: 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .stab {
+      padding: 10px 18px;
+      font-size: 11px;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color .2s, border-color .2s;
+      background: none;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+      font-family: var(--mono);
+    }
+    .stab:hover { color: var(--text); }
+    .stab.active { color: var(--white); border-bottom-color: var(--white); }
+
+    .screenshot-frame {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top: none;
+      border-radius: 0 0 12px 12px;
+      overflow: hidden;
+      position: relative;
+    }
+    .screenshot-frame img {
+      width: 100%;
+      display: block;
+      opacity: 0;
+      position: absolute;
+      top: 0; left: 0;
+      transition: opacity .3s;
+    }
+    .screenshot-frame img.active { opacity: 1; position: relative; }
+
+    /* ── SECTION LABEL ── */
+    .section-label {
+      font-size: 11px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--green);
+      margin-bottom: 16px;
+    }
+
+    /* ── FEATURES ── */
+    .features {
+      padding: 100px 40px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .features-header {
+      margin-bottom: 60px;
+    }
+    .features-title {
+      font-family: var(--serif);
+      font-size: clamp(32px, 4vw, 52px);
+      color: var(--white);
+      line-height: 1.1;
+      letter-spacing: -1.5px;
+      max-width: 560px;
+    }
+    .features-title em {
+      font-style: italic;
+      color: var(--muted);
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .feature {
+      background: var(--black);
+      padding: 32px 28px;
+      transition: background .2s;
+    }
+    .feature:hover { background: var(--surface); }
+
+    .feature-icon {
+      width: 36px; height: 36px;
+      background: var(--green-dim);
+      border: 1px solid rgba(34,197,94,.2);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      font-size: 16px;
+    }
+    .feature-name {
+      font-size: 13px;
+      color: var(--white);
+      font-weight: 500;
+      margin-bottom: 8px;
+      letter-spacing: -.01em;
+    }
+    .feature-desc {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    /* ── QUICKSTART ── */
+    .quickstart {
+      padding: 100px 40px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .quickstart-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: start;
+    }
+    .quickstart-title {
+      font-family: var(--serif);
+      font-size: clamp(32px, 4vw, 52px);
+      color: var(--white);
+      line-height: 1.1;
+      letter-spacing: -1.5px;
+      margin-bottom: 20px;
+    }
+    .quickstart-sub {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.7;
+      margin-bottom: 32px;
+    }
+
+    .code-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .code-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .code-lang {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+    .code-copy {
+      font-size: 11px;
+      color: var(--muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: var(--mono);
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      transition: color .2s;
+    }
+    .code-copy:hover { color: var(--green); }
+
+    pre {
+      padding: 20px;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 12.5px;
+      line-height: 1.7;
+    }
+    pre .kw  { color: #e879f9; }
+    pre .str { color: #86efac; }
+    pre .cm  { color: var(--muted); }
+    pre .num { color: #fb923c; }
+    pre .fn  { color: #7dd3fc; }
+
+    /* ── DIVIDER ── */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 0 40px;
+    }
+
+    /* ── SDK TABLE ── */
+    .sdks {
+      padding: 100px 40px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .sdks-title {
+      font-family: var(--serif);
+      font-size: clamp(28px, 3vw, 44px);
+      color: var(--white);
+      letter-spacing: -1px;
+      margin-bottom: 8px;
+    }
+    .sdks-sub {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 40px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+    }
+    th {
+      text-align: left;
+      padding: 10px 16px;
+      font-size: 10px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--surface); }
+    .td-sdk { color: var(--white); font-weight: 500; }
+    .td-env {
+      font-family: var(--mono);
+      color: var(--green);
+      font-size: 12px;
+    }
+    .td-na { color: var(--muted); font-style: italic; }
+    .td-link a { color: var(--muted); text-decoration: none; font-size: 11px; }
+    .td-link a:hover { color: var(--white); }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 20px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .footer-logo {
+      font-family: var(--serif);
+      font-size: 18px;
+      color: var(--white);
+      text-decoration: none;
+      letter-spacing: -.5px;
+    }
+    .footer-links {
+      display: flex;
+      gap: 24px;
+      list-style: none;
+    }
+    .footer-links a {
+      color: var(--muted);
+      font-size: 11px;
+      text-decoration: none;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      transition: color .2s;
+    }
+    .footer-links a:hover { color: var(--white); }
+    .footer-copy {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      nav { padding: 0 20px; }
+      .nav-links { display: none; }
+      .hero { padding: 100px 20px 60px; }
+      .screenshots { padding: 0 20px 60px; }
+      .features { padding: 60px 20px; }
+      .features-grid { grid-template-columns: 1fr; }
+      .quickstart { padding: 60px 20px; }
+      .quickstart-grid { grid-template-columns: 1fr; gap: 40px; }
+      .sdks { padding: 60px 20px; }
+      .divider { margin: 0 20px; }
+      footer { padding: 30px 20px; }
+      .hero-title { letter-spacing: -2px; }
+    }
+
+    /* ── SCROLL FADE ── */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity .6s ease, transform .6s ease;
+    }
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="#" class="nav-logo">resen<em>D</em>ev</a>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#quickstart">Quick Start</a></li>
+      <li><a href="https://github.com/jupitercl/resendev">GitHub</a></li>
+      <li><a href="https://hub.docker.com/r/jupitercl/resendev" class="btn btn-primary" style="padding:6px 14px;font-size:11px;">Docker Hub</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-grid"></div>
+
+    <div class="hero-badge">local dev</div>
+
+    <h1 class="hero-title">
+      resen<span class="accent">D</span>ev
+    </h1>
+
+    <p class="hero-sub">
+      Mock the <strong>Resend API</strong> locally. Capture, inspect, and debug
+      transactional emails — without sending a single one.
+    </p>
+
+    <div class="hero-cmd">
+      <span class="hero-cmd-prompt">$</span>
+      <span class="hero-cmd-text" id="hero-cmd-text">docker run -p 3099:3099 jupitercl/resendev</span>
+      <button class="hero-cmd-copy" id="hero-copy" onclick="copyHero()">copy</button>
+    </div>
+
+    <div class="hero-actions">
+      <a href="https://github.com/jupitercl/resendev" class="btn btn-primary">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        GitHub
+      </a>
+      <a href="https://hub.docker.com/r/jupitercl/resendev" class="btn btn-ghost">Docker Hub</a>
+    </div>
+  </section>
+
+  <!-- SCREENSHOTS -->
+  <div class="screenshots fade-in">
+    <div class="screenshot-tabs">
+      <button class="stab active" onclick="switchTab(0, this)">Email List</button>
+      <button class="stab" onclick="switchTab(1, this)">Email Detail</button>
+      <button class="stab" onclick="switchTab(2, this)">Dashboard</button>
+    </div>
+    <div class="screenshot-frame">
+      <img src="screenshots/email-list.png" alt="Email List" class="active" />
+      <img src="screenshots/email-detail.png" alt="Email Detail" />
+      <img src="screenshots/dashboard.png" alt="Dashboard" />
+    </div>
+  </div>
+
+  <!-- FEATURES -->
+  <section class="features fade-in" id="features">
+    <div class="features-header">
+      <p class="section-label">Why resenDev</p>
+      <h2 class="features-title">Everything you need,<br /><em>nothing you don't.</em></h2>
+    </div>
+    <div class="features-grid">
+      <div class="feature">
+        <div class="feature-icon">🔀</div>
+        <div class="feature-name">Drop-in replacement</div>
+        <div class="feature-desc">Just set an env var. No code changes to your app — every Resend SDK picks it up automatically.</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🔍</div>
+        <div class="feature-name">Full inspection</div>
+        <div class="feature-desc">HTML preview, plain text, raw source, headers, attachments, and JSON — all in one place.</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-name">Real-time updates</div>
+        <div class="feature-desc">Emails appear instantly via Server-Sent Events. No polling, no page refresh needed.</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🔎</div>
+        <div class="feature-name">Full-text search</div>
+        <div class="feature-desc">Search across subject, body, sender, and recipient across all captured emails instantly.</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">📴</div>
+        <div class="feature-name">Works offline</div>
+        <div class="feature-desc">Zero external dependencies. No API keys, no network calls, no accounts. Just Docker.</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🌙</div>
+        <div class="feature-name">Dark mode</div>
+        <div class="feature-desc">System-aware dark/light mode. Plus error simulation and delay settings for realistic testing.</div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- QUICKSTART -->
+  <section class="quickstart fade-in" id="quickstart">
+    <div class="quickstart-grid">
+      <div>
+        <p class="section-label">Quick Start</p>
+        <h2 class="quickstart-title">Up and running<br />in 30 seconds.</h2>
+        <p class="quickstart-sub">
+          Run the container, point your SDK at <code style="color:var(--green)">localhost:3099</code>,
+          and start sending. Any API key is accepted — the header just needs to be present.
+        </p>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">docker compose</span>
+          </div>
+          <pre>services:
+  resendev:
+    image: jupitercl/resendev:latest
+    ports:
+      - <span class="str">"3099:3099"</span>
+    volumes:
+      - resendev_data:/app/data
+
+volumes:
+  resendev_data:</pre>
+        </div>
+      </div>
+      <div>
+        <div class="code-block" style="margin-bottom:16px">
+          <div class="code-header">
+            <span class="code-lang">Node.js / TypeScript</span>
+          </div>
+          <pre><span class="cm"># .env.development</span>
+RESEND_BASE_URL=<span class="str">http://localhost:3099</span>
+RESEND_API_KEY=<span class="str">re_any_key_works</span></pre>
+        </div>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">TypeScript</span>
+          </div>
+          <pre><span class="kw">import</span> { Resend } <span class="kw">from</span> <span class="str">"resend"</span>;
+
+<span class="kw">const</span> resend = <span class="kw">new</span> <span class="fn">Resend</span>(<span class="str">"re_any_key"</span>);
+
+<span class="kw">await</span> resend.emails.<span class="fn">send</span>({
+  from:    <span class="str">"no-reply@myapp.com"</span>,
+  to:      <span class="str">"user@example.com"</span>,
+  subject: <span class="str">"Hello!"</span>,
+  html:    <span class="str">"&lt;h1&gt;Hi!&lt;/h1&gt;"</span>,
+});</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- SDK TABLE -->
+  <section class="sdks fade-in">
+    <p class="section-label">SDK Support</p>
+    <h2 class="sdks-title">Works with every Resend SDK.</h2>
+    <p class="sdks-sub">Set the env var and you're done — no code changes required.</p>
+    <div class="code-block">
+      <table>
+        <thead>
+          <tr>
+            <th>SDK</th>
+            <th>Environment Variable</th>
+            <th>Link</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="td-sdk">Node.js</td>
+            <td class="td-env">RESEND_BASE_URL=http://localhost:3099</td>
+            <td class="td-link"><a href="https://github.com/resend/resend-node" target="_blank">resend-node ↗</a></td>
+          </tr>
+          <tr>
+            <td class="td-sdk">Python</td>
+            <td class="td-env">RESEND_API_URL=http://localhost:3099</td>
+            <td class="td-link"><a href="https://github.com/resend/resend-python" target="_blank">resend-python ↗</a></td>
+          </tr>
+          <tr>
+            <td class="td-sdk">Go</td>
+            <td class="td-env">RESEND_BASE_URL=http://localhost:3099</td>
+            <td class="td-link"><a href="https://github.com/resend/resend-go" target="_blank">resend-go ↗</a></td>
+          </tr>
+          <tr>
+            <td class="td-sdk">Ruby</td>
+            <td class="td-env">RESEND_BASE_URL=http://localhost:3099</td>
+            <td class="td-link"><a href="https://github.com/resend/resend-ruby" target="_blank">resend-ruby ↗</a></td>
+          </tr>
+          <tr>
+            <td class="td-sdk">Rust</td>
+            <td class="td-env">RESEND_BASE_URL=http://localhost:3099</td>
+            <td class="td-link"><a href="https://github.com/resend/resend-rust" target="_blank">resend-rust ↗</a></td>
+          </tr>
+          <tr>
+            <td class="td-sdk">PHP</td>
+            <td class="td-env">RESEND_BASE_URL=http://localhost:3099</td>
+            <td class="td-link"><a href="https://github.com/resend/resend-php" target="_blank">resend-php ↗</a></td>
+          </tr>
+          <tr>
+            <td class="td-sdk">Java</td>
+            <td class="td-na">Not supported (hardcoded base URL)</td>
+            <td class="td-link"><a href="https://github.com/resend/resend-java" target="_blank">resend-java ↗</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <a href="#" class="footer-logo">resenDev</a>
+    <ul class="footer-links">
+      <li><a href="https://github.com/jupitercl/resendev">GitHub</a></li>
+      <li><a href="https://hub.docker.com/r/jupitercl/resendev">Docker Hub</a></li>
+      <li><a href="https://github.com/jupitercl/resendev/releases">Releases</a></li>
+      <li><a href="https://github.com/jupitercl/resendev/blob/main/LICENSE">MIT License</a></li>
+    </ul>
+    <span class="footer-copy">Made with ♥ for devs who test email</span>
+  </footer>
+
+  <script>
+    // Screenshot tabs
+    function switchTab(idx, btn) {
+      document.querySelectorAll('.stab').forEach((t, i) => t.classList.toggle('active', i === idx));
+      document.querySelectorAll('.screenshot-frame img').forEach((img, i) => img.classList.toggle('active', i === idx));
+    }
+
+    // Copy hero command
+    function copyHero() {
+      const text = document.getElementById('hero-cmd-text').textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('hero-copy');
+        btn.textContent = 'copied!';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 2000);
+      });
+    }
+
+    // Scroll fade-in
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+  </script>
+
+</body>
+</html>
