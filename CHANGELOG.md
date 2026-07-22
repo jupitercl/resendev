@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Templates API** — Resend-compatible template endpoints: `POST /templates`, `GET /templates`, `GET /templates/:id`, `PUT /templates/:id`, `DELETE /templates/:id`, `POST /templates/:id/publish`
+- **Templates API** — Resend-compatible template endpoints: `POST /templates`, `GET /templates`, `GET /templates/:id`, `PATCH /templates/:id` (and `PUT`), `DELETE /templates/:id`, `POST /templates/:id/publish`
 - **Send with templates** — `POST /emails` and `POST /emails/batch` accept a `template: { id, variables }` object (resolved by id or alias), interpolating `{{{VAR}}}` placeholders with per-variable fallbacks; `from`/`subject` inherited from the template, mutually exclusive with `html`/`text`, and the template must be published first
 - **Templates UI** — Templates page to create (with a dynamic variables editor), publish, inspect (HTML preview, source, variables), and delete templates, with real-time SSE updates
 

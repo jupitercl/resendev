@@ -176,7 +176,7 @@ Resendev implements the Resend API endpoints:
 | `POST` | `/templates` | Create a template |
 | `GET` | `/templates` | List templates |
 | `GET` | `/templates/:id` | Get a template |
-| `PUT` | `/templates/:id` | Update a template |
+| `PATCH` | `/templates/:id` | Update a template (also accepts `PUT`) |
 | `DELETE` | `/templates/:id` | Delete a template |
 | `POST` | `/templates/:id/publish` | Publish a template |
 

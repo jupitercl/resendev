@@ -131,6 +131,7 @@ export function TemplateList() {
   -H "Content-Type: application/json" \\
   -d '{
     "name": "welcome",
+    "from": "hi@myapp.com",
     "subject": "Hi {{{NAME}}}",
     "html": "<p>Welcome, {{{NAME}}}!</p>",
     "variables": [
