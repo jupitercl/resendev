@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { createEmailSchema, validateAuth } from "@/lib/validators";
 import { createEmail, listEmails, getSettings } from "@/lib/store";
+import { prepareEmailRequest } from "@/lib/email-capture";
 import { broadcast } from "@/lib/sse";
 
 export async function POST(request: NextRequest) {
@@ -41,7 +42,15 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const email = createEmail(result.data);
+  const prepared = prepareEmailRequest(result.data);
+  if (!prepared.ok) {
+    return Response.json(
+      { statusCode: prepared.status, message: prepared.message, name: prepared.name },
+      { status: prepared.status },
+    );
+  }
+
+  const email = createEmail(prepared.request);
   broadcast("email:new", email);
 
   return Response.json({ id: email.id });

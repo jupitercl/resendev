@@ -1,9 +1,9 @@
 // Resend-compatible types
 
 export interface CreateEmailRequest {
-  from: string;
+  from?: string;
   to: string | string[];
-  subject: string;
+  subject?: string;
   html?: string;
   text?: string;
   cc?: string | string[];
@@ -13,6 +13,14 @@ export interface CreateEmailRequest {
   attachments?: Attachment[];
   tags?: Tag[];
   scheduled_at?: string;
+  template?: TemplateReference;
+}
+
+// Reference to a published template when sending an email.
+// When present, `from`, `subject` and body may be omitted (inherited from the template).
+export interface TemplateReference {
+  id: string; // template id or alias
+  variables?: Record<string, string | number>;
 }
 
 export interface Attachment {
@@ -78,4 +86,62 @@ export interface BatchEmailRequest {
 
 export interface BatchEmailResponse {
   data: CreateEmailResponse[];
+}
+
+// Template types (Resend-compatible)
+
+export interface TemplateVariable {
+  key: string;
+  type: "string" | "number";
+  fallback_value?: string | number;
+}
+
+export interface CreateTemplateRequest {
+  name: string;
+  html: string;
+  alias?: string;
+  subject?: string;
+  from?: string;
+  reply_to?: string | string[];
+  text?: string;
+  variables?: TemplateVariable[];
+}
+
+export type UpdateTemplateRequest = Partial<CreateTemplateRequest>;
+
+export interface Template {
+  id: string;
+  object: "template";
+  name: string;
+  alias: string | null;
+  subject: string | null;
+  from: string | null;
+  reply_to: string[] | null;
+  html: string;
+  text: string | null;
+  variables: TemplateVariable[];
+  status: "draft" | "published";
+  created_at: string;
+  published_at: string | null;
+}
+
+export interface CreateTemplateResponse {
+  id: string;
+  object: "template";
+}
+
+// Internal DB row type for templates
+export interface TemplateRow {
+  id: string;
+  name: string;
+  alias: string | null;
+  subject: string | null;
+  from_address: string | null;
+  reply_to: string | null;
+  html: string;
+  text_content: string | null;
+  variables: string | null; // JSON array
+  status: string;
+  created_at: string;
+  published_at: string | null;
 }

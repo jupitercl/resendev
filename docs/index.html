@@ -646,6 +646,11 @@
         <div class="feature-desc">HTML preview, plain text, raw source, headers, attachments, and JSON — all in one place.</div>
       </div>
       <div class="feature">
+        <div class="feature-icon">🧩</div>
+        <div class="feature-name">Templates</div>
+        <div class="feature-desc">Create, publish, and send with server-managed templates. Variables interpolate on send — just like Resend.</div>
+      </div>
+      <div class="feature">
         <div class="feature-icon">⚡</div>
         <div class="feature-name">Real-time updates</div>
         <div class="feature-desc">Emails appear instantly via Server-Sent Events. No polling, no page refresh needed.</div>
@@ -718,6 +723,24 @@ RESEND_API_KEY=<span class="str">re_any_key_works</span></pre>
   to:      <span class="str">"user@example.com"</span>,
   subject: <span class="str">"Hello!"</span>,
   html:    <span class="str">"&lt;h1&gt;Hi!&lt;/h1&gt;"</span>,
+});</pre>
+        </div>
+        <div class="code-block" style="margin-top:16px">
+          <div class="code-header">
+            <span class="code-lang">Templates</span>
+          </div>
+          <pre><span class="cm">// create → publish → send with variables</span>
+<span class="kw">const</span> { data } = <span class="kw">await</span> resend.templates.<span class="fn">create</span>({
+  name:    <span class="str">"welcome"</span>,
+  from:    <span class="str">"hi@myapp.com"</span>,
+  subject: <span class="str">"Hi {{{NAME}}}"</span>,
+  html:    <span class="str">"&lt;p&gt;Welcome, {{{NAME}}}!&lt;/p&gt;"</span>,
+});
+<span class="kw">await</span> resend.templates.<span class="fn">publish</span>(data.id);
+
+<span class="kw">await</span> resend.emails.<span class="fn">send</span>({
+  to:       <span class="str">"user@example.com"</span>,
+  template: { id: data.id, variables: { NAME: <span class="str">"Fran"</span> } },
 });</pre>
         </div>
       </div>
