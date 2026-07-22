@@ -116,9 +116,15 @@ export function TemplateList() {
         <div>
           <h2 className="text-[15px] font-medium">No templates yet</h2>
           <p className="text-[13px] text-muted-foreground mt-1 max-w-sm">
-            Create a template through the Resend SDK or API, then publish it to use it when sending.
+            Create one below, or through the Resend SDK or API, then publish it to use it when sending.
           </p>
         </div>
+        <Link
+          href="/templates-view/new"
+          className="px-3 py-1.5 text-[12px] font-medium bg-foreground text-background rounded-md hover:bg-foreground/90 transition-colors"
+        >
+          New template
+        </Link>
         <pre className="bg-muted/50 border border-border rounded-lg p-4 text-xs text-left font-mono text-muted-foreground max-w-lg w-full overflow-x-auto">
 {`curl -X POST http://localhost:3099/templates \\
   -H "Authorization: Bearer re_test_123" \\
@@ -145,11 +151,17 @@ export function TemplateList() {
   return (
     <div>
       {/* Toolbar */}
-      <div className="flex items-center justify-end mb-1 px-3">
+      <div className="flex items-center justify-between mb-1 px-3">
         <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
           {connected && <span className="w-1.5 h-1.5 rounded-full bg-green-500" />}
           {templates.length} template{templates.length !== 1 ? "s" : ""}
         </div>
+        <Link
+          href="/templates-view/new"
+          className="text-[12px] text-muted-foreground hover:text-foreground transition-colors"
+        >
+          + New template
+        </Link>
       </div>
 
       {/* Table header */}
