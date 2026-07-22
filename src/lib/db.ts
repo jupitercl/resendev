@@ -65,5 +65,22 @@ function initialize(db: Database.Database): void {
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS templates (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      alias TEXT UNIQUE,
+      subject TEXT,
+      from_address TEXT,
+      reply_to TEXT,
+      html TEXT NOT NULL,
+      text_content TEXT,
+      variables TEXT,
+      status TEXT NOT NULL DEFAULT 'draft',
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      published_at TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_templates_created_at ON templates(created_at DESC);
   `);
 }

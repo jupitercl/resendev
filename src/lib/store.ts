@@ -1,6 +1,16 @@
 import { randomUUID } from "crypto";
 import { getDb } from "./db";
-import type { CreateEmailRequest, Email, EmailRow } from "@/types";
+import type {
+  CreateEmailRequest,
+  CreateTemplateRequest,
+  Email,
+  EmailRow,
+  Template,
+  TemplateReference,
+  TemplateRow,
+  TemplateVariable,
+  UpdateTemplateRequest,
+} from "@/types";
 import { normalizeToArray } from "./validators";
 
 function generateId(): string {
@@ -187,4 +197,184 @@ export function searchEmails(query: string): Email[] {
     ORDER BY emails.created_at DESC
   `).all(ftsQuery) as EmailRow[];
   return rows.map(rowToEmail);
+}
+
+// ---------------------------------------------------------------------------
+// Templates (Resend-compatible)
+// ---------------------------------------------------------------------------
+
+function generateTemplateId(): string {
+  // Resend returns a bare UUID for templates.
+  return randomUUID();
+}
+
+function rowToTemplate(row: TemplateRow): Template {
+  return {
+    id: row.id,
+    object: "template",
+    name: row.name,
+    alias: row.alias,
+    subject: row.subject,
+    from: row.from_address,
+    reply_to: row.reply_to ? JSON.parse(row.reply_to) : null,
+    html: row.html,
+    text: row.text_content,
+    variables: row.variables ? JSON.parse(row.variables) : [],
+    status: row.status === "published" ? "published" : "draft",
+    created_at: new Date(row.created_at + "Z").toISOString(),
+    published_at: row.published_at ? new Date(row.published_at + "Z").toISOString() : null,
+  };
+}
+
+export function createTemplate(request: CreateTemplateRequest): Template {
+  const db = getDb();
+  const id = generateTemplateId();
+  const replyTo = normalizeToArray(request.reply_to);
+
+  db.prepare(`
+    INSERT INTO templates (id, name, alias, subject, from_address, reply_to, html, text_content, variables, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')
+  `).run(
+    id,
+    request.name,
+    request.alias || null,
+    request.subject || null,
+    request.from || null,
+    replyTo ? JSON.stringify(replyTo) : null,
+    request.html,
+    request.text || null,
+    request.variables ? JSON.stringify(request.variables) : null,
+  );
+
+  return getTemplateById(id)!;
+}
+
+export function getTemplateById(id: string): Template | null {
+  const db = getDb();
+  const row = db.prepare("SELECT * FROM templates WHERE id = ?").get(id) as TemplateRow | undefined;
+  return row ? rowToTemplate(row) : null;
+}
+
+export function getTemplateByIdOrAlias(idOrAlias: string): Template | null {
+  const db = getDb();
+  const row = db
+    .prepare("SELECT * FROM templates WHERE id = ? OR alias = ?")
+    .get(idOrAlias, idOrAlias) as TemplateRow | undefined;
+  return row ? rowToTemplate(row) : null;
+}
+
+export function listTemplates(): Template[] {
+  const db = getDb();
+  const rows = db.prepare("SELECT * FROM templates ORDER BY created_at DESC").all() as TemplateRow[];
+  return rows.map(rowToTemplate);
+}
+
+export function updateTemplate(id: string, updates: UpdateTemplateRequest): Template | null {
+  const db = getDb();
+  const existing = db.prepare("SELECT * FROM templates WHERE id = ?").get(id) as TemplateRow | undefined;
+  if (!existing) return null;
+
+  const replyTo =
+    updates.reply_to !== undefined ? normalizeToArray(updates.reply_to) : undefined;
+
+  db.prepare(`
+    UPDATE templates SET
+      name = ?,
+      alias = ?,
+      subject = ?,
+      from_address = ?,
+      reply_to = ?,
+      html = ?,
+      text_content = ?,
+      variables = ?
+    WHERE id = ?
+  `).run(
+    updates.name ?? existing.name,
+    updates.alias !== undefined ? updates.alias || null : existing.alias,
+    updates.subject !== undefined ? updates.subject || null : existing.subject,
+    updates.from !== undefined ? updates.from || null : existing.from_address,
+    replyTo !== undefined ? (replyTo ? JSON.stringify(replyTo) : null) : existing.reply_to,
+    updates.html ?? existing.html,
+    updates.text !== undefined ? updates.text || null : existing.text_content,
+    updates.variables !== undefined ? JSON.stringify(updates.variables) : existing.variables,
+    id,
+  );
+
+  return getTemplateById(id);
+}
+
+export function deleteTemplate(id: string): boolean {
+  const db = getDb();
+  const result = db.prepare("DELETE FROM templates WHERE id = ?").run(id);
+  return result.changes > 0;
+}
+
+export function publishTemplate(id: string): Template | null {
+  const db = getDb();
+  const result = db
+    .prepare("UPDATE templates SET status = 'published', published_at = datetime('now') WHERE id = ?")
+    .run(id);
+  if (result.changes === 0) return null;
+  return getTemplateById(id);
+}
+
+// Replaces {{{VAR}}} placeholders using provided values, falling back to the
+// template's declared fallback_value, then to an empty string.
+function interpolate(
+  input: string,
+  declared: TemplateVariable[],
+  provided: Record<string, string | number>,
+): string {
+  const values = new Map<string, string>();
+  for (const v of declared) {
+    const val = provided[v.key] ?? v.fallback_value ?? "";
+    values.set(v.key, String(val));
+  }
+  for (const [k, val] of Object.entries(provided)) {
+    if (!values.has(k)) values.set(k, String(val));
+  }
+  return input.replace(/\{\{\{\s*([\w.]+)\s*\}\}\}/g, (match, key) =>
+    values.has(key) ? values.get(key)! : match,
+  );
+}
+
+export interface ResolvedTemplateEmail {
+  from?: string;
+  subject?: string;
+  html: string;
+  text?: string;
+  reply_to?: string[];
+}
+
+export type TemplateResolution =
+  | { ok: true; resolved: ResolvedTemplateEmail }
+  | { ok: false; status: number; name: string; message: string };
+
+// Resolves a template reference (by id or alias) into a renderable email body.
+// Mirrors Resend behaviour: the template must exist and be published.
+export function resolveTemplateForEmail(ref: TemplateReference): TemplateResolution {
+  const template = getTemplateByIdOrAlias(ref.id);
+  if (!template) {
+    return { ok: false, status: 404, name: "not_found", message: `Template \`${ref.id}\` not found` };
+  }
+  if (template.status !== "published") {
+    return {
+      ok: false,
+      status: 422,
+      name: "validation_error",
+      message: `Template \`${ref.id}\` must be published before it can be used`,
+    };
+  }
+
+  const vars = ref.variables ?? {};
+  return {
+    ok: true,
+    resolved: {
+      from: template.from ?? undefined,
+      subject: template.subject ? interpolate(template.subject, template.variables, vars) : undefined,
+      html: interpolate(template.html, template.variables, vars),
+      text: template.text ? interpolate(template.text, template.variables, vars) : undefined,
+      reply_to: template.reply_to ?? undefined,
+    },
+  };
 }
