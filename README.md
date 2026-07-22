@@ -14,6 +14,7 @@ Local development server that mocks the [Resend](https://resend.com) email API. 
 
 - Drop-in replacement — just swap the base URL
 - Web UI to browse and inspect captured emails
+- Templates — create, publish, and send with server-managed templates
 - Real-time updates via Server-Sent Events
 - Full-text search across emails
 - Works offline, zero external dependencies
@@ -121,17 +122,62 @@ curl -X POST http://localhost:3099/emails \
   }'
 ```
 
+### Templates
+
+Resendev mocks Resend's [Templates API](https://resend.com/docs/api-reference/templates/create-template). Create a template, publish it, then send emails that reference it — variables are interpolated on send.
+
+```typescript
+import { Resend } from "resend";
+
+const resend = new Resend("re_any_key_works");
+
+// 1. Create a template (starts as a draft)
+const { data: template } = await resend.templates.create({
+  name: "order-confirmation",
+  subject: "Your order {{{ORDER}}} is confirmed",
+  html: "<p>Hi {{{NAME}}}, your order {{{ORDER}}} is confirmed.</p>",
+  variables: [
+    { key: "NAME", type: "string", fallback_value: "there" },
+    { key: "ORDER", type: "string" },
+  ],
+});
+
+// 2. Publish it (required before it can be used)
+await resend.templates.publish(template.id);
+
+// 3. Send an email using the template (by id or alias)
+await resend.emails.send({
+  to: "user@example.com",
+  template: { id: template.id, variables: { NAME: "Fran", ORDER: "A-123" } },
+});
+```
+
+Notes:
+
+- Placeholders use `{{{VAR}}}` and fall back to each variable's `fallback_value`.
+- `from` and `subject` are inherited from the template when omitted on send.
+- A template must be **published** before it can be used (otherwise `422`).
+- `template` is mutually exclusive with `html`/`text` (otherwise `422`).
+
+You can also create, publish, and delete templates from the **Templates** page in the web UI.
+
 ## API Compatibility
 
 Resendev implements the Resend API endpoints:
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/emails` | Send (capture) an email |
+| `POST` | `/emails` | Send (capture) an email — supports `template` |
 | `GET` | `/emails/:id` | Get email by ID |
-| `POST` | `/emails/batch` | Send batch emails |
+| `POST` | `/emails/batch` | Send batch emails — supports `template` |
 | `GET` | `/emails` | List all captured emails |
 | `DELETE` | `/emails/:id` | Delete a captured email |
+| `POST` | `/templates` | Create a template |
+| `GET` | `/templates` | List templates |
+| `GET` | `/templates/:id` | Get a template |
+| `PUT` | `/templates/:id` | Update a template |
+| `DELETE` | `/templates/:id` | Delete a template |
+| `POST` | `/templates/:id/publish` | Publish a template |
 
 Authentication: any `Authorization: Bearer <key>` header is accepted. The header must be present (to catch misconfiguration) but the key value is not validated.
 
@@ -149,6 +195,7 @@ Authentication: any `Authorization: Bearer <key>` header is accepted. The header
 
 - **Email List** — Browse all captured emails with real-time updates, search, bulk actions, keyboard navigation (`j`/`k`/`Enter`)
 - **Email Detail** — Tabs for HTML preview, plain text, source, attachments, headers, and raw JSON
+- **Templates** — Create (with a variables editor), publish, inspect, and delete server-managed templates
 - **Dashboard** — Total emails, emails today, top senders, emails per hour chart
 - **Settings** — API delay simulation, error rate, dark/light mode, export as JSON
 
