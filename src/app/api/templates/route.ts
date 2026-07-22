@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { createTemplateSchema } from "@/lib/validators";
-import { createTemplate, listTemplates } from "@/lib/store";
+import { createTemplate, listTemplates, TemplateAliasConflictError } from "@/lib/store";
 import { broadcast } from "@/lib/sse";
 
 export async function GET() {
@@ -20,7 +20,15 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: result.error.issues[0].message }, { status: 422 });
   }
 
-  const template = createTemplate(result.data);
+  let template;
+  try {
+    template = createTemplate(result.data);
+  } catch (e) {
+    if (e instanceof TemplateAliasConflictError) {
+      return Response.json({ error: e.message }, { status: 422 });
+    }
+    throw e;
+  }
   broadcast("template:new", template);
   return Response.json(template);
 }

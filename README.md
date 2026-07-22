@@ -134,6 +134,7 @@ const resend = new Resend("re_any_key_works");
 // 1. Create a template (starts as a draft)
 const { data: template } = await resend.templates.create({
   name: "order-confirmation",
+  from: "orders@myapp.com",
   subject: "Your order {{{ORDER}}} is confirmed",
   html: "<p>Hi {{{NAME}}}, your order {{{ORDER}}} is confirmed.</p>",
   variables: [

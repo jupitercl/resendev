@@ -203,6 +203,24 @@ export function searchEmails(query: string): Email[] {
 // Templates (Resend-compatible)
 // ---------------------------------------------------------------------------
 
+// Thrown when a create/update would collide with an existing template alias
+// (the `alias` column is UNIQUE). Routes translate this into a 422 instead of
+// letting the raw SQLite constraint error surface as a 500.
+export class TemplateAliasConflictError extends Error {
+  constructor(alias: string) {
+    super(`A template with alias \`${alias}\` already exists`);
+    this.name = "TemplateAliasConflictError";
+  }
+}
+
+function isUniqueConstraintError(e: unknown): boolean {
+  return (
+    e instanceof Error &&
+    "code" in e &&
+    (e as { code?: string }).code === "SQLITE_CONSTRAINT_UNIQUE"
+  );
+}
+
 function generateTemplateId(): string {
   // Resend returns a bare UUID for templates.
   return randomUUID();
@@ -231,20 +249,25 @@ export function createTemplate(request: CreateTemplateRequest): Template {
   const id = generateTemplateId();
   const replyTo = normalizeToArray(request.reply_to);
 
-  db.prepare(`
-    INSERT INTO templates (id, name, alias, subject, from_address, reply_to, html, text_content, variables, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')
-  `).run(
-    id,
-    request.name,
-    request.alias || null,
-    request.subject || null,
-    request.from || null,
-    replyTo ? JSON.stringify(replyTo) : null,
-    request.html,
-    request.text || null,
-    request.variables ? JSON.stringify(request.variables) : null,
-  );
+  try {
+    db.prepare(`
+      INSERT INTO templates (id, name, alias, subject, from_address, reply_to, html, text_content, variables, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')
+    `).run(
+      id,
+      request.name,
+      request.alias || null,
+      request.subject || null,
+      request.from || null,
+      replyTo ? JSON.stringify(replyTo) : null,
+      request.html,
+      request.text || null,
+      request.variables ? JSON.stringify(request.variables) : null,
+    );
+  } catch (e) {
+    if (isUniqueConstraintError(e)) throw new TemplateAliasConflictError(request.alias ?? "");
+    throw e;
+  }
 
   return getTemplateById(id)!;
 }
@@ -277,28 +300,33 @@ export function updateTemplate(id: string, updates: UpdateTemplateRequest): Temp
   const replyTo =
     updates.reply_to !== undefined ? normalizeToArray(updates.reply_to) : undefined;
 
-  db.prepare(`
-    UPDATE templates SET
-      name = ?,
-      alias = ?,
-      subject = ?,
-      from_address = ?,
-      reply_to = ?,
-      html = ?,
-      text_content = ?,
-      variables = ?
-    WHERE id = ?
-  `).run(
-    updates.name ?? existing.name,
-    updates.alias !== undefined ? updates.alias || null : existing.alias,
-    updates.subject !== undefined ? updates.subject || null : existing.subject,
-    updates.from !== undefined ? updates.from || null : existing.from_address,
-    replyTo !== undefined ? (replyTo ? JSON.stringify(replyTo) : null) : existing.reply_to,
-    updates.html ?? existing.html,
-    updates.text !== undefined ? updates.text || null : existing.text_content,
-    updates.variables !== undefined ? JSON.stringify(updates.variables) : existing.variables,
-    id,
-  );
+  try {
+    db.prepare(`
+      UPDATE templates SET
+        name = ?,
+        alias = ?,
+        subject = ?,
+        from_address = ?,
+        reply_to = ?,
+        html = ?,
+        text_content = ?,
+        variables = ?
+      WHERE id = ?
+    `).run(
+      updates.name ?? existing.name,
+      updates.alias !== undefined ? updates.alias || null : existing.alias,
+      updates.subject !== undefined ? updates.subject || null : existing.subject,
+      updates.from !== undefined ? updates.from || null : existing.from_address,
+      replyTo !== undefined ? (replyTo ? JSON.stringify(replyTo) : null) : existing.reply_to,
+      updates.html ?? existing.html,
+      updates.text !== undefined ? updates.text || null : existing.text_content,
+      updates.variables !== undefined ? JSON.stringify(updates.variables) : existing.variables,
+      id,
+    );
+  } catch (e) {
+    if (isUniqueConstraintError(e)) throw new TemplateAliasConflictError(updates.alias ?? "");
+    throw e;
+  }
 
   return getTemplateById(id);
 }
@@ -312,7 +340,7 @@ export function deleteTemplate(id: string): boolean {
 export function publishTemplate(id: string): Template | null {
   const db = getDb();
   const result = db
-    .prepare("UPDATE templates SET status = 'published', published_at = datetime('now') WHERE id = ?")
+    .prepare("UPDATE templates SET status = 'published', published_at = COALESCE(published_at, datetime('now')) WHERE id = ?")
     .run(id);
   if (result.changes === 0) return null;
   return getTemplateById(id);

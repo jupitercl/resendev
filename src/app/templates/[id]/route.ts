@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { updateTemplateSchema, validateAuth } from "@/lib/validators";
-import { getTemplateById, updateTemplate, deleteTemplate } from "@/lib/store";
+import { getTemplateById, updateTemplate, deleteTemplate, TemplateAliasConflictError } from "@/lib/store";
 import { broadcast } from "@/lib/sse";
 
 const notFound = () =>
@@ -23,9 +23,11 @@ export async function GET(
   return Response.json(template);
 }
 
-export async function PUT(
+// Resend's SDK sends PATCH for template updates; PUT is accepted too for
+// robustness with hand-written clients.
+async function handleUpdate(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  params: Promise<{ id: string }>,
 ) {
   const authCheck = validateAuth(request);
   if (authCheck) return authCheck.error;
@@ -51,12 +53,37 @@ export async function PUT(
     );
   }
 
-  const template = updateTemplate(id, result.data);
+  let template;
+  try {
+    template = updateTemplate(id, result.data);
+  } catch (e) {
+    if (e instanceof TemplateAliasConflictError) {
+      return Response.json(
+        { statusCode: 422, message: e.message, name: "validation_error" },
+        { status: 422 },
+      );
+    }
+    throw e;
+  }
   if (!template) return notFound();
 
   broadcast("template:updated", template);
 
   return Response.json({ id: template.id, object: "template" });
+}
+
+export function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  return handleUpdate(request, params);
+}
+
+export function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  return handleUpdate(request, params);
 }
 
 export async function DELETE(

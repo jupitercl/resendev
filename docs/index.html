@@ -732,6 +732,7 @@ RESEND_API_KEY=<span class="str">re_any_key_works</span></pre>
           <pre><span class="cm">// create → publish → send with variables</span>
 <span class="kw">const</span> { data } = <span class="kw">await</span> resend.templates.<span class="fn">create</span>({
   name:    <span class="str">"welcome"</span>,
+  from:    <span class="str">"hi@myapp.com"</span>,
   subject: <span class="str">"Hi {{{NAME}}}"</span>,
   html:    <span class="str">"&lt;p&gt;Welcome, {{{NAME}}}!&lt;/p&gt;"</span>,
 });

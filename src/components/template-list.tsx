@@ -40,7 +40,7 @@ export function TemplateList() {
     try {
       const res = await fetch("/api/templates");
       const data = await res.json();
-      setTemplates(data.data);
+      setTemplates(data.data ?? []);
     } catch {
       // Will retry via SSE reconnect
     } finally {
